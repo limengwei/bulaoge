@@ -3,6 +3,7 @@ package controllers
 import (
 	. "bulaoge/models"
 	"fmt"
+	"strings"
 
 	"github.com/astaxie/beego"
 )
@@ -12,7 +13,8 @@ type DbmController struct {
 }
 
 var (
-	tables = []string{"kc_name", "wh_item_case"}
+	tables   = []string{"kc_name", "wh_item_case"}
+	pageSize = 10
 )
 
 func (c *DbmController) Get() {
@@ -21,7 +23,64 @@ func (c *DbmController) Get() {
 }
 
 func (c *DbmController) List() {
-	fmt.Println("listttttttttttt")
+
+	tableName := c.Ctx.Input.Param(":tableName")
+	sql := "select top 10 id from " + tableName + " where id not in(select top 0 id from  " + tableName + " order by id desc) order by id desc"
+
+	if strings.EqualFold(c.Ctx.Request.Method, "POST") {
+		sql = c.GetString("sql", sql)
+
+		db, err := NewMssqlEngine()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer db.Close()
+
+		rows, err := db.Query(sql)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		columns, err := rows.Columns()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		c.Data["columns"] = columns
+
+		tableData := make([]interface{}, 0)
+
+		values := make([]interface{}, len(columns))
+
+		scanArgs := make([]interface{}, len(columns))
+
+		for i := range columns {
+			scanArgs[i] = &values[i]
+		}
+
+		for rows.Next() {
+			err = rows.Scan(scanArgs...)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			m := make(map[string]interface{})
+			for j := range values {
+				m[columns[j]] = values[j]
+			}
+			tableData = append(tableData, m)
+		}
+		c.Data["list"] = tableData
+	}
+
+	c.Data["tables"] = tables
+	c.Data["sql"] = sql
+	c.TplName = "dbm/index.html"
+
 }
 
 //测试sqlserver

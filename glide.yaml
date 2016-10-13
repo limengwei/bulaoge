@@ -1,0 +1,14 @@
+package: .
+import:
+- package: bulaoge/controllers
+- package: bulaoge/models
+- package: bulaoge/routers
+- package: github.com/astaxie/beego
+- package: github.com/go-sql-driver/mysql
+  version: ~1.2.0
+- package: github.com/mattn/go-adodb
+testImport:
+- package: github.com/smartystreets/goconvey
+  version: ~1.6.2
+  subpackages:
+  - convey

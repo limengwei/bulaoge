@@ -30,7 +30,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">DBM</a>
+          <a class="navbar-brand" href="/">DBM</a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
@@ -63,10 +63,39 @@
 		{{end}}
 		</ul>
       </div>
-    
-		<table class="table table-hover">
-			
-		</table>
+	<form action="/dbm/list/kc_name" method="post">
+    <div class="col-lg-10">
+    <div class="input-group">
+      <input type="text" class="form-control" name="sql" placeholder="输入sql语句" value="{{.sql}}">
+      <span class="input-group-btn">
+        <button class="btn btn-default" type="submit">执行</button>
+      </span>
+    </div><!-- /input-group -->
+  </div><!-- /.col-lg-10 -->
+  </form>
+
+	
+	<table class="table table-hover">
+		<thead>
+			<tr>
+			<th>#</th>
+			{{range $index,$column:=.columns }}
+			<th>{{$column}}</th>
+			{{end}}
+			</tr>
+		</thead>
+	
+		<tbody>
+			{{range $index,$item:=.list }}
+			<tr>
+				<td>{{$index}}</td>
+				{{range $index,$attr:=$item }}
+				<td>{{$attr}}</td>
+				{{end}}
+			</tr>
+			{{end}}
+		</tbody>
+	</table>
 
     </div>
 
