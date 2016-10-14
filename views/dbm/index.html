@@ -62,23 +62,44 @@
 		<li role="presentation"><a href="/dbm/list/{{$table}}">{{$index}} {{$table}}</a></li>
 		{{end}}
 		</ul>
-      </div>
-	<form action="/dbm/list/kc_name" method="post">
-    <div class="col-lg-10">
-    <div class="input-group">
-      <input type="text" class="form-control" name="sql" placeholder="输入sql语句" value="{{.sql}}">
-      <span class="input-group-btn">
-        <button class="btn btn-default" type="submit">执行</button>
-      </span>
-    </div><!-- /input-group -->
-  </div><!-- /.col-lg-10 -->
-  </form>
+    </div>
 
+	<form action="/dbm/list/{{.currentTable}}" method="post">
+		<div class="input-group">
+		<input type="text" class="form-control" name="sql" placeholder="输入sql语句" value="{{.sql}}">
+		<span class="input-group-btn">
+		<button class="btn btn-default" type="submit">执行</button>
+		</span>
+		</div>
+	</form>
+
+	<br>
+
+	<form action="/dbm/move">
+		<div class="row">
+			<div class="col-lg-2">
+				<input type="hidden"  value="{{.list}}"> 
+				<input type="text" class="form-control" placeholder="数据表名称" value="{{.currentTable}}">
+			</div>
+			<div class="col-lg-10">
+				<div class="input-group">
+				
+				<input type="text" class="form-control" placeholder="请输入对应字段" value="{{.attrs}}">
+				<span class="input-group-btn">
+				<button class="btn btn-default" type="submit">迁移</button>
+				</span>
+				</div>
+			</div>
+		</div>
+	</form>
 	
 	<table class="table table-hover">
 		<thead>
 			<tr>
+			{{if .columns}}
 			<th>#</th>
+			{{end}}
+			
 			{{range $index,$column:=.columns }}
 			<th>{{$column}}</th>
 			{{end}}

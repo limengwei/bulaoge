@@ -11,6 +11,6 @@ func init() {
 	beego.Router("/dbm", &controllers.DbmController{}, "*:Get")
 
 	beego.Router("/dbm/list/:tableName:string", &controllers.DbmController{}, "*:List")
-	beego.Router("/dbm/list/:tableName:string/:pageIndex:int", &controllers.DbmController{}, "*:List")
 
+	beego.Router("/dbm/move", &controllers.DbmController{}, "get:Move")
 }

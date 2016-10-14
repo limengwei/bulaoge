@@ -2,8 +2,10 @@ package controllers
 
 import (
 	. "bulaoge/models"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/astaxie/beego"
 )
@@ -13,24 +15,53 @@ type DbmController struct {
 }
 
 var (
-	tables   = []string{"kc_name", "wh_item_case"}
-	pageSize = 10
+	MssqlDbName  = "dentist"
+	MysqlDbName  = "dentist"
+	pageSize     = 10
+	tables       = make([]string, 0)
+	currentTable = ""
+	tableData    = make([]interface{}, 0)
+	columns      = make([]string, 0)
 )
 
 func (c *DbmController) Get() {
+	db, err := NewMssqlEngine(MssqlDbName)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+
+	rows, err := db.Query("select name from sys.tables")
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	var i int
+	var v string
+	for rows.Next() {
+		rows.Scan(&v)
+		tables = append(tables, v)
+		i++
+	}
+
 	c.Data["tables"] = tables
 	c.TplName = "dbm/index.html"
 }
 
 func (c *DbmController) List() {
 
-	tableName := c.Ctx.Input.Param(":tableName")
-	sql := "select top 10 id from " + tableName + " where id not in(select top 0 id from  " + tableName + " order by id desc) order by id desc"
+	currentTable = c.Ctx.Input.Param(":tableName")
+	sql := "select top 10 * from " + currentTable
+
+	c.Data["columns"] = []string{"*"}
 
 	if strings.EqualFold(c.Ctx.Request.Method, "POST") {
 		sql = c.GetString("sql", sql)
 
-		db, err := NewMssqlEngine()
+		db, err := NewMssqlEngine(MssqlDbName)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -44,7 +75,7 @@ func (c *DbmController) List() {
 			return
 		}
 
-		columns, err := rows.Columns()
+		columns, err = rows.Columns()
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -52,15 +83,16 @@ func (c *DbmController) List() {
 
 		c.Data["columns"] = columns
 
-		tableData := make([]interface{}, 0)
-
 		values := make([]interface{}, len(columns))
 
 		scanArgs := make([]interface{}, len(columns))
 
+		c.Data["attrs"] = strings.Join(columns, ",")
 		for i := range columns {
 			scanArgs[i] = &values[i]
 		}
+
+		tableData = tableData[:0]
 
 		for rows.Next() {
 			err = rows.Scan(scanArgs...)
@@ -68,9 +100,9 @@ func (c *DbmController) List() {
 				fmt.Println(err)
 			}
 
-			m := make(map[string]interface{})
+			m := make([]interface{}, 0)
 			for j := range values {
-				m[columns[j]] = values[j]
+				m = append(m, values[j])
 			}
 			tableData = append(tableData, m)
 		}
@@ -78,14 +110,51 @@ func (c *DbmController) List() {
 	}
 
 	c.Data["tables"] = tables
+	c.Data["currentTable"] = currentTable
 	c.Data["sql"] = sql
 	c.TplName = "dbm/index.html"
+}
 
+func (c *DbmController) Move() {
+	var sql = ""
+
+	for i, v := range tableData {
+
+		vs := make([]interface{}, 0)
+
+		vs = append(vs, v)
+
+		b, _ := json.Marshal(vs)
+		values := string(b)
+		values = strings.Replace(values, "[", "", -1)
+		values = strings.Replace(values, "]", "", -1)
+
+		sql = "insert into " + currentTable + "(" + strings.Join(columns, ",") + ") values (" + values + ")"
+
+		func() {
+			db, err := NewMysqlEngine(MysqlDbName)
+
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			defer db.Close()
+
+			_, err = db.Exec(sql)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				fmt.Println(i)
+			}
+			time.Sleep(time.Millisecond * 100) //100ms插入一次
+		}()
+	}
+	c.Ctx.Output.Body([]byte("迁移成功"))
 }
 
 //测试sqlserver
 func testMssql() {
-	db, err := NewMssqlEngine()
+	db, err := NewMssqlEngine(MssqlDbName)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -109,12 +178,13 @@ func testMssql() {
 
 //测试mysql
 func testMysql() {
-	db, err := NewMysqlEngine()
+	db, err := NewMysqlEngine(MysqlDbName)
 
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	defer db.Close()
 
 	rows, err := db.Query("select * from kc_name")
 	if err != nil {

@@ -38,10 +38,10 @@ func (m *MssqlConfig) Open() (err error) {
 	return nil
 }
 
-func NewMssqlEngine() (dbb *sql.DB, err error) {
+func NewMssqlEngine(dbName string) (dbb *sql.DB, err error) {
 	db := MssqlConfig{
 		DataSource: "DESKTOP-OI76G5U",
-		Database:   "dentist",
+		Database:   dbName,
 		Windows:    false,
 		SAUser:     "sa",
 		SAPassword: "sa"}
@@ -74,10 +74,10 @@ func (m *MySqlConfig) Open() (err error) {
 	return nil
 }
 
-func NewMysqlEngine() (dbb *sql.DB, err error) {
+func NewMysqlEngine(dbName string) (dbb *sql.DB, err error) {
 	db := MySqlConfig{
 		Addr:   "localhost:3306",
-		DBName: "dentist",
+		DBName: dbName,
 		User:   "root",
 		Passwd: ""}
 
